@@ -6,11 +6,11 @@
 		<div class="container">
 			<div class="banner">
 				<img src="../assets/images/banner.png" mode=""></img>
-				<p>AON 3D Clothing</p>
-				<p>Customize your clothing logo and generate a 3D avatar</p>
+				<p>AON FACE SWAP</p>
+				<p>一秒成为电影明星</p>
 			</div>
 			<div class="uni-form-item uni-column">
-				<div class="title">Upload your photos</div>
+				<div class="title">上传图片</div>
 
 				<div class="content">
 					<div class="upload upload-done" v-if="imgUrl">
@@ -22,7 +22,7 @@
 
 						<div class="upload upload-before">
 							<img class="uploadIcon" src="../assets/icons/uploadImg.png" mode=""></img>
-							<text>limit 30MB per file</text>
+							<text>最大30MB</text>
 						</div>
 					</van-uploader>
 
@@ -39,7 +39,7 @@
 			</div> -->
 
 			<div class="uni-form-item uni-column">
-				<div class="title">Choose your template</div>
+				<div class="title">选择明星模板</div>
 				<div class="templateCon" v-if="templateList.length > 0">
 					<div v-for="(item, index) in templateList"
 						:class="`template_item ${Number(item.id) === templateId ? 'templateActive' : ''}`"
@@ -61,7 +61,7 @@
 					<text>-8</text>
 				</div>
 				<button class="submitBtn" @click="formSubmit">
-					<text>Generate img</text>
+					<text>生成明星照片</text>
 				</button>
 			</div>
 
@@ -86,7 +86,7 @@ const router = useRouter()
 
 const showLoading = ref(false);
 const showError = ref(false);
-const prompt = ref('');
+const swapImgUrl = ref('');
 const imgUrl = ref('');
 const submitImgUrl = ref('');
 const templateList = ref([]);
@@ -152,8 +152,8 @@ function deleteImg() {
 
 
 const formSubmit = async () => {
-	console.log(prompt.value, submitImgUrl.value)
-	if (!imgUrl.value || !submitImgUrl.value) {
+	console.log(swapImgUrl.value, submitImgUrl.value)
+	if (!imgUrl.value || !submitImgUrl.value || !swapImgUrl.value) {
 		showError.value = true
 
 		setTimeout(() => {
@@ -172,18 +172,25 @@ const formSubmit = async () => {
 
 		const aonet = new AI(ai_options)
 
-		const data = {
-			input: {
-				"image": submitImgUrl.value,
-				"style": "3D",
-				"prompt": prompt.value,
-				"negative_prompt": "",
-				"prompt_strength": 4.5,
-				"denoising_strength": 1,
-				"instant_id_strength": 0.8
-			}
-		}
-		let response = await aonet.prediction("/predictions/ai/face-to-many", data)
+		// const data = {
+		// 	input: {
+		// 		"image": submitImgUrl.value,
+		// 		"style": "3D",
+		// 		"prompt": prompt.value,
+		// 		"negative_prompt": "",
+		// 		"prompt_strength": 4.5,
+		// 		"denoising_strength": 1,
+		// 		"instant_id_strength": 0.8
+		// 	}
+		// }
+		const data = {      
+			input: {       
+				 "swap_image": submitImgUrl.value,
+				 "target_image": swapImgUrl.value,     
+			},    
+		};    
+		console.log("formSubmit data", data);    
+		let response = await aonet.prediction("/predictions/ai/face-swap", data); 
 		if (response.task.exec_code == 200 && response.task.is_success) {
 			showLoading.value = false
 
@@ -211,15 +218,16 @@ async function getTemplateList() {
 	try {
 		const list = await getTemplate()
 		templateList.value = list
-		prompt.value = list[0].prompt
+		swapImgUrl.value = list[0].image
 	} catch (error) {
 		console.log(error)
 	}
 }
 
 function selectTemplate(id, imageUrl, prompt_) {
+	console.log("imageUrl", imageUrl)
 	templateId.value = id
-	prompt.value = prompt_
+	swapImgUrl.value = imageUrl
 }
 
 onMounted(() => {

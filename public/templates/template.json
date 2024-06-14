@@ -18,5 +18,16 @@
         "id": "4",
         "image": "template4.png",
         "prompt": "A figure emerging from a dense forest, with beams of sunlight creating a radiant backdrop."
+    },
+    {
+        "id": "5",
+        "image": "template5.png",
+        "prompt": "A figure emerging from a dense forest, with beams of sunlight creating a radiant backdrop."
+    },
+    {
+        "id": "6",
+        "image": "template6.png",
+        "prompt": "A figure emerging from a dense forest, with beams of sunlight creating a radiant backdrop."
     }
+    
 ]

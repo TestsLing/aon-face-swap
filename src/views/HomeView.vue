@@ -2,9 +2,8 @@
 	<Header></Header>
 	<Loading :showLoading="showLoading" />
 	<div>
-		<!-- 页面内容 -->
+		
 		<div class="container">
-			<!-- <img class="banner" src="../assets/images/banner.png" mode=""></img>  -->
 
 			<el-image
 				style="width: 400px; height: 400px"
@@ -56,6 +55,7 @@
 </template>
 
 
+
 <script>
 
 import { ref } from 'vue';
@@ -67,6 +67,7 @@ import { AI } from '../lib/aonweb/aon-web.es'
 import 'vant/lib/index.css';
 import Header from '../components/Header.vue';
 import Loading from '../components/Loading.vue';
+import PhotoWall from '../components/PhotoWall.vue';
 
 const router = useRouter()
 

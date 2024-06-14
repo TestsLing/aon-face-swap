@@ -23,27 +23,34 @@
 					</van-uploader>
 				</div>
 
-
+				<div style="padding: 40px;"></div>
 				<div class="title">模板选择</div>
 
 				<el-row :gutter="20">
 					<el-col :span="8" v-for="(image, index) in items" :key="index">
-					<el-card :key="index"
+						<el-card 
+							:key="index"
 							:class="{ 'card-item': true, 'odd-item': index === selectedIndex, 'elected': index === selectedIndex }"
 							@click="handleCardClick(index)">
-						<img :src="image.image" :alt="image.name" class="image" />
-						<div style="padding: 14px;">
-						<span>{{ image.name }}</span>
-						</div>
-					</el-card>
+							<img :src="image.image" :alt="image.name" class="image" />
+							<div style="padding: 4px; text-align: center;">
+							<span>{{ image.name }}</span>
+							</div>
+						</el-card>
 					</el-col>
 				</el-row>
+			</div>
 
 
-      		</div>
+			<!-- <div class="uni-form-item uni-column">
+				<div class="title">Customize your clothing logo</div>
+				<div class="content">
+					<input v-model="logoText" name="input" placeholder="Please enter the logo text on your clothes" />
+				</div>
+			</div> -->
 
-      <div class="uni-form-item error-text" v-if="showError">
-				<div class="content">请上传图片！</div>
+			<div class="uni-form-item error-text" v-if="showError">
+				<div class="content">Please Upload your photos</div>
 			</div>
 			<div class="bottom_btn">
 				<div class="spendCount">
@@ -51,7 +58,7 @@
 					<text>-8</text>
 				</div>
 				<button class="submitBtn" @click="formSubmit">
-					<text>生成图片</text>
+					<text>Generate img</text>
 				</button>
 			</div>
 
@@ -60,21 +67,25 @@
 	</div>
 </template>
 
-
 <script setup>
-
 import { ref } from 'vue';
 import { showToast } from 'vant';
 import { useRouter } from 'vue-router'
-import { AI } from '../lib/aonweb/aon-web.es'
+
+import { AI } from 'aonweb'
+
 import 'vant/lib/index.css';
 import Header from '../components/Header.vue';
 import Loading from '../components/Loading.vue';
 
-// 定义数据
+const router = useRouter()
+
 const showLoading = ref(false);
 const showError = ref(false);
-const maxSize = 30 * 1024 * 1024;
+const logoText = ref('');
+const imgUrl = ref('');
+const submitImgUrl = ref('');
+
 const items = [
   { image: 'https://n.sinaimg.cn/sinacn10105/600/w2000h1800/20200112/158e-imztzhm9061009.jpg', name: 'Card 1' },
   { image: 'https://p0.itc.cn/images01/20230214/02ba44e985a54cbebe1ec854c0f5f9c9.jpeg', name: 'Card 2' },
@@ -86,7 +97,6 @@ const selectedIndex = ref(0); // 记录当前选中的卡片索引
 const swapImageUrl = ref('');
 const targetImageUrl = ref('');
 const imageUrl = ref('');
-
 // 定义方法
 function handleCardClick(index) {
   selectedIndex.value = index;
@@ -94,111 +104,122 @@ function handleCardClick(index) {
   console.log("swapImageUrl", swapImageUrl.value);
 }
 
-async function formSubmit() {
-  console.log("AI from submit");
 
-  showLoading.value = true;
-  try {
-    // AI 使用方法
-    const ai_options = {
-      //Please replace with your own API key or jwt token.
-      auth: "Rbhpcp0FKNrYNA1nZkrwrIbD0YSSRlVG",
-      // host: "http://localhost:8080"
-    };
-
-    const aonet = new AI(ai_options);
-
-    const data = {
-      input: {
-        "swap_image": targetImageUrl.value,
-        "target_image": swapImageUrl.value,
-      },
-    };
-    console.log("formSubmit data", data);
-    let response = await aonet.prediction("/predictions/ai/face-swap", data);
-    console.log("test", response);
-
-    if (response.task.exec_code === 200 && response.task.is_success) {
-      showLoading.value = false;
-
-      let url = response.output;
-      if (Array.isArray(response.output)) {
-        url = response.output && response.output.length && response.output[0];
-      }
-      if (typeof url === 'object' || typeof url === 'Object') {
-        return;
-      }
-      imageUrl.value = url;
-      goToComplete(url);
-    } else {
-      showLoading.value = false;
-      showToast('AI 处理失败');
-    }
-  } catch (error) {
-    showLoading.value = false;
-    showToast('AI 处理失败');
-  }
-}
-
-function onOversize(file) {
-  console.log(file);
-  showToast('文件大小不能超过 30MB');
-}
-
+const maxSize = 30 * 1024 * 1024;
 function goToComplete(url) {
-  const query = { url: url };
-  router.push({
-    path: '/created',
-    query,
-  });
+	const query = { url: url }
+	router.push({
+		path: '/created',
+		query
+	})
 }
+
+const onOversize = (file) => {
+	console.log(file);
+	showToast('文件大小不能超过 30MB');
+};
 
 function afterRead(file) {
-  const formData = new FormData();
-  formData.append('file', file.file);
-  console.log(formData, file.file);
+	const formData = new FormData();
+	formData.append('file', file.file);
+	console.log(formData, file.file)
 
-  // 调用上传接口
-  uploadFile(formData).then((res) => {
-    console.log(res);
-    if (res.code === 200 && res.data && res.data.length) {
-      targetImageUrl.value = res.data;
-    }
-  }).catch((err) => {
-    showToast('image upload failed');
-    console.log(err);
-  });
+	// 调用上传接口
+	uploadFile(formData).then(res => {
+		console.log(res);
+		if (res.code == 200 && res.data && res.data.length) {
+			submitImgUrl.value = res.data
+		}
 
-  imageUrl.value = URL.createObjectURL(file.file);
+	}).catch(err => {
+		showToast('image upload failed');
+		console.log(err);
+	});
+
+	imgUrl.value = URL.createObjectURL(file.file);
+
 }
-
 // 上传接口
-async function uploadFile(formData) {
-  const response = await fetch('https://tmp-file.aigic.ai/api/v1/upload?expires=1800&type=image/png', {
-    method: 'POST',
-    body: formData,
-  });
+const uploadFile = async (formData) => {
+	const response = await fetch('https://tmp-file.aigic.ai/api/v1/upload?expires=1800&type=image/png', {
+		method: 'POST',
+		body: formData
+	});
 
-  const data = await response.json();
-  console.log(data);
-  return data;
-}
+	const data = await response.json();
+	console.log(data);
+	return data;
+};
 
 function deleteImg() {
-  if (imageUrl.value) {
-    const formData = new FormData();
-    formData.append('file', imageUrl.value);
+	if (imgUrl.value) {
+		const formData = new FormData();
+		formData.append('file', imgUrl.value);
 
-    // 删除文件
-    formData.delete('file');
-    imageUrl.value = null;
-    targetImageUrl.value = null;
+		// 删除文件
+		formData.delete('file');
+		imgUrl.value = null;
+		submitImgUrl.value = null
 
-    console.log('File deleted:', formData.get('file'));
-  } else {
-    console.log('No file to delete');
-  }
+		console.log('File deleted:', formData.get('file'));
+	} else {
+		console.log('No file to delete')
+	}
 }
+
+
+const formSubmit = async () => {
+	if (!logoText.value || !imgUrl.value || !submitImgUrl.value) {
+		showError.value = true
+
+		setTimeout(() => {
+			showError.value = false
+		}, 3000)
+		return
+	}
+	showLoading.value = true
+	try {
+		// AI 使用方法
+		const ai_options = {
+			//Please replace with your own API key or jwt token.
+			auth: "Rbhpcp0FKNrYNA1nZkrwrIbD0YSSRlVG",
+			// host: "http://localhost:8080"
+		}
+
+		const aonet = new AI(ai_options)
+
+		const data = {
+			input: {
+				"swap_image": targetImageUrl.value,
+				"target_image": swapImageUrl.value,
+			},
+		};
+		console.log("formSubmit data", data);
+		let response = await aonet.prediction("/predictions/ai/face-swap", data);
+		console.log("test", response)
+		if (response.task.exec_code == 200 && response.task.is_success) {
+			showLoading.value = false
+
+			let url = response.output
+			if (Array.isArray(response.output)) {
+				url = response.output && response.output.length && response.output[0]
+			}
+			if (typeof url == 'object' || typeof url == 'Object') {
+				return
+			}
+
+			goToComplete(url)
+		} else {
+			showLoading.value = false
+			showToast('AI processing failed')
+		}
+	} catch (error) {
+		showLoading.value = false
+		showToast('AI processing failed')
+	}
+
+}
+
 </script>
 
 <style scoped>
@@ -351,7 +372,7 @@ li {
 }
 
 img {
-  width: 100%;
+width: 100%;
   height: 200px;
   object-fit: contain;
 }

@@ -1,26 +1,45 @@
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+</script>
+
 <template>
-  <router-view/>
+	<RouterView />
 </template>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+.container {
+	padding: 0 6.4vw 18.4vw;
+	margin: 0;
 }
 
-nav {
-  padding: 30px;
+.bottom_btn {
+	width: 100%;
+	position: fixed;
+	bottom: 4.27vw;
+	left: 0;
+	padding: 0 6.4vw;
+	box-sizing: border-box;
+
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
 }
 
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
+.bottom_btn uni-button {
+	margin: 0;
 }
 
-nav a.router-link-exact-active {
-  color: #42b983;
+button {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 0;
+	border: none;
+}
+
+.uni-form-item .van-uploader__wrapper,
+.uni-form-item .van-uploader__input-wrapper {
+	width: 100%;
 }
 </style>

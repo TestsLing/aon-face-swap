@@ -9,8 +9,8 @@
 				<div class="title">上传图片</div>
 
 				<div class="content">
-					<div class="upload upload-done" v-if="imgUrl">
-						<img class="upload-res" :src="imgUrl" mode=""></img>
+					<div class="upload upload-done" v-if="imageUrl">
+						<img class="upload-res" :src="imageUrl" mode=""></img>
 						<img class="deleteIcon" @click="deleteImg" src="../assets/icons/delete.png" mode=""></img>
 					</div>
 					<van-uploader v-else style="width: 100%" :max-size="maxSize" @oversize="onOversize"
@@ -21,6 +21,7 @@
 							<text>文件大小限制在30MB以内</text>
 						</div>
 					</van-uploader>
+
 				</div>
 
 
@@ -70,9 +71,22 @@
 
 <script>
 
+import { ref } from 'vue';
+import { showToast } from 'vant';
+import { useRouter } from 'vue-router'
+import { AI } from '../lib/aonweb/aon-web.es'
+import 'vant/lib/index.css';
+import Header from '../components/Header.vue';
+import Loading from '../components/Loading.vue';
+import PhotoWall from '../components/PhotoWall.vue';
+
+
 export default {
 	data() {
     return {
+	  showLoading: ref(false),
+	  showError: ref(false),
+	  maxSize : 30 * 1024 * 1024,
       items: [
         { image: 'https://n.sinaimg.cn/sinacn10105/600/w2000h1800/20200112/158e-imztzhm9061009.jpg', name: 'Card 1' },
         { image: 'https://p0.itc.cn/images01/20230214/02ba44e985a54cbebe1ec854c0f5f9c9.jpeg', name: 'Card 2' },
@@ -82,7 +96,7 @@ export default {
       ],
       selectedIndex: 0, // 记录当前选中的卡片索引
       swapImageUrl: 'https://n.sinaimg.cn/sinacn10105/600/w2000h1800/20200112/158e-imztzhm9061009.jpg', 
-	  targetImageUrl: "https://replicate.delivery/pbxt/JoBuz3wGiVFQ1TDEcsGZbYcNh0bHpvwOi32T1fmxhRujqcu7/9X2.png",
+	  targetImageUrl: "",
 	//   imageUrl: "https://replicate.delivery/pbxt/JoBuz3wGiVFQ1TDEcsGZbYcNh0bHpvwOi32T1fmxhRujqcu7/9X2.png"
 	  imageUrl: ""
 	};
@@ -149,137 +163,66 @@ export default {
 			showToast('AI processing failed')
 		}
 
-	}
+	},
+	onOversize(file) {
+		console.log(file);
+		showToast('文件大小不能超过 30MB');
+	},
+    goToComplete(url) {
+		const query = { url: url }
+		router.push({
+			path: '/created',
+			query
+		})
+	},
+	afterRead(file) {
+		const formData = new FormData();
+		formData.append('file', file.file);
+		console.log(formData, file.file)
+
+		// 调用上传接口
+		uploadFile(formData).then(res => {
+			console.log(res);
+			if (res.code == 200 && res.data && res.data.length) {
+				targetImageUrl = res.data
+			}
+
+		}).catch(err => {
+			showToast('image upload failed');
+			console.log(err);
+		});
+
+		imageUrl = URL.createObjectURL(file.file);
+
+	},
+	// 上传接口
+	async uploadFile(formData) {
+		const response = await fetch('https://tmp-file.aigic.ai/api/v1/upload?expires=1800&type=image/png', {
+			method: 'POST',
+			body: formData
+		});
+
+		const data = await response.json();
+		console.log(data);
+		return data;
+	},
+	deleteImg() {
+		if (imageUrl) {
+			const formData = new FormData();
+			formData.append('file', imageUrl.value);
+
+			// 删除文件
+			formData.delete('file');
+			imageUrl = null;
+			targetImageUrl = null
+
+			console.log('File deleted:', formData.get('file'));
+		} else {
+			console.log('No file to delete')
+		}
+	},
   },
 };
-
-
-import { ref } from 'vue';
-import { showToast } from 'vant';
-import { useRouter } from 'vue-router'
-
-import { AI } from '../lib/aonweb/aon-web.es'
-
-import 'vant/lib/index.css';
-import Header from '../components/Header.vue';
-import Loading from '../components/Loading.vue';
-import PhotoWall from '../components/PhotoWall.vue';
-
-const router = useRouter()
-
-const showLoading = ref(false);
-const showError = ref(false);
-const logoText = ref('');
-const imgUrl = ref('');
-const submitImgUrl = ref('');
-
-const maxSize = 30 * 1024 * 1024;
-
-function afterRead(file) {
-	const formData = new FormData();
-	formData.append('file', file.file);
-	console.log(formData, file.file)
-
-	// 调用上传接口
-	uploadFile(formData).then(res => {
-		console.log(res);
-		if (res.code == 200 && res.data && res.data.length) {
-			submitImgUrl.value = res.data
-		}
-
-	}).catch(err => {
-		showToast('image upload failed');
-		console.log(err);
-	});
-
-	imgUrl.value = URL.createObjectURL(file.file);
-
-}
-// 上传接口
-const uploadFile = async (formData) => {
-	const response = await fetch('https://tmp-file.aigic.ai/api/v1/upload?expires=1800&type=image/png', {
-		method: 'POST',
-		body: formData
-	});
-
-	const data = await response.json();
-	console.log(data);
-	return data;
-};
-
-function deleteImg() {
-	if (imgUrl.value) {
-		const formData = new FormData();
-		formData.append('file', imgUrl.value);
-
-		// 删除文件
-		formData.delete('file');
-		imgUrl.value = null;
-		submitImgUrl.value = null
-
-		console.log('File deleted:', formData.get('file'));
-	} else {
-		console.log('No file to delete')
-	}
-}
-
-
-const formSubmit = async () => {
-	if (!logoText.value || !imgUrl.value || !submitImgUrl.value) {
-		showError.value = true
-
-		setTimeout(() => {
-			showError.value = false
-		}, 3000)
-		return
-	}
-	showLoading.value = true
-	try {
-		// AI 使用方法
-		const ai_options = {
-			//Please replace with your own API key or jwt token.
-			auth: "Rbhpcp0FKNrYNA1nZkrwrIbD0YSSRlVG",
-			// host: "http://localhost:8080"
-		}
-
-		const aonet = new AI(ai_options)
-
-		const data = {
-			input: {
-				"image": submitImgUrl.value,
-				"style": "3D",
-				"prompt": logoText.value,
-				"negative_prompt": "",
-				"prompt_strength": 4.5,
-				"denoising_strength": 1,
-				"instant_id_strength": 0.8
-			}
-		}
-		console.log("formSubmit data", data)
-		let response = await aonet.prediction("/predictions/ai/face-to-many", data)
-		console.log("test", response)
-		if (response.task.exec_code == 200 && response.task.is_success) {
-			showLoading.value = false
-
-			let url = response.output
-			if (Array.isArray(response.output)) {
-				url = response.output && response.output.length && response.output[0]
-			}
-			if (typeof url == 'object' || typeof url == 'Object') {
-				return
-			}
-
-			goToComplete(url)
-		} else {
-			showLoading.value = false
-			showToast('AI processing failed')
-		}
-	} catch (error) {
-		showLoading.value = false
-		showToast('AI processing failed')
-	}
-
-}
 
 </script>
 

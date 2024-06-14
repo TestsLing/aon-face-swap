@@ -4,9 +4,13 @@
 	<div>
 		<!-- 页面内容 -->
 		<div class="container">
-			<!-- <img class="banner" src="../assets/images/banner.png" mode=""></img> -->
+			<div class="banner">
+				<img src="../assets/images/banner.png" mode=""></img>
+				<p>AON 3D Clothing</p>
+				<p>Customize your clothing logo and generate a 3D avatar</p>
+			</div>
 			<div class="uni-form-item uni-column">
-				<div class="title">上传图片</div>
+				<div class="title">Upload your photos</div>
 
 				<div class="content">
 					<div class="upload upload-done" v-if="imgUrl">
@@ -18,36 +22,35 @@
 
 						<div class="upload upload-before">
 							<img class="uploadIcon" src="../assets/icons/uploadImg.png" mode=""></img>
-							<text>文件大小限制在30MB以内</text>
+							<text>limit 30MB per file</text>
 						</div>
 					</van-uploader>
+
+
 				</div>
 
-				<div style="padding: 40px;"></div>
-				<div class="title">模板选择</div>
-
-				<el-row :gutter="20">
-					<el-col :span="8" v-for="(image, index) in items" :key="index">
-						<el-card 
-							:key="index"
-							:class="{ 'card-item': true, 'odd-item': index === selectedIndex, 'elected': index === selectedIndex }"
-							@click="handleCardClick(index)">
-							<img :src="image.image" :alt="image.name" class="image" />
-							<div style="padding: 4px; text-align: center;">
-							<span>{{ image.name }}</span>
-							</div>
-						</el-card>
-					</el-col>
-				</el-row>
 			</div>
-
 
 			<!-- <div class="uni-form-item uni-column">
 				<div class="title">Customize your clothing logo</div>
 				<div class="content">
-					<input v-model="logoText" name="input" placeholder="Please enter the logo text on your clothes" />
+					<input v-model="prompt" name="input" placeholder="Please enter the logo text on your clothes" />
 				</div>
 			</div> -->
+
+			<div class="uni-form-item uni-column">
+				<div class="title">Choose your template</div>
+				<div class="templateCon" v-if="templateList.length > 0">
+					<div v-for="(item, index) in templateList"
+						:class="`template_item ${Number(item.id) === templateId ? 'templateActive' : ''}`"
+						@click="selectTemplate(Number(item.id), item.image, item.prompt)" :key="index">
+						<img :src="item.image" alt="" />
+						<div :class="`isActiveIcon ${Number(item.id) === templateId ? 'active' : ''}`">
+							<img src="../assets/icons/selectIcon.png" alt="" v-if="Number(item.id) === templateId">
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<div class="uni-form-item error-text" v-if="showError">
 				<div class="content">Please Upload your photos</div>
@@ -68,11 +71,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { showToast } from 'vant';
 import { useRouter } from 'vue-router'
 
 import { AI } from 'aonweb'
+import { getTemplate } from '../lib/getTemplate'
 
 import 'vant/lib/index.css';
 import Header from '../components/Header.vue';
@@ -82,28 +86,11 @@ const router = useRouter()
 
 const showLoading = ref(false);
 const showError = ref(false);
-const logoText = ref('');
+const prompt = ref('');
 const imgUrl = ref('');
 const submitImgUrl = ref('');
-
-const items = [
-  { image: 'https://n.sinaimg.cn/sinacn10105/600/w2000h1800/20200112/158e-imztzhm9061009.jpg', name: 'Card 1' },
-  { image: 'https://p0.itc.cn/images01/20230214/02ba44e985a54cbebe1ec854c0f5f9c9.jpeg', name: 'Card 2' },
-  { image: 'https://5b0988e595225.cdn.sohucs.com/images/20190921/514338157e3a4766859ac405b9799747.jpeg', name: 'Card 3' },
-  { image: 'https://5b0988e595225.cdn.sohucs.com/images/20180402/dc5333d8ce1e44ff8531eb6085783ea0.jpeg', name: 'Card 4' },
-  { image: 'https://img1.baidu.com/it/u=2715887104,1070523227&fm=253&fmt=auto&app=138&f=JPEG?w=469&h=472', name: 'Card 5' },
-];
-const selectedIndex = ref(0); // 记录当前选中的卡片索引
-const swapImageUrl = ref('');
-const targetImageUrl = ref('');
-const imageUrl = ref('');
-// 定义方法
-function handleCardClick(index) {
-  selectedIndex.value = index;
-  swapImageUrl.value = items[index].image;
-  console.log("swapImageUrl", swapImageUrl.value);
-}
-
+const templateList = ref([]);
+const templateId = ref(1);
 
 const maxSize = 30 * 1024 * 1024;
 function goToComplete(url) {
@@ -115,18 +102,15 @@ function goToComplete(url) {
 }
 
 const onOversize = (file) => {
-	console.log(file);
 	showToast('文件大小不能超过 30MB');
 };
 
 function afterRead(file) {
 	const formData = new FormData();
 	formData.append('file', file.file);
-	console.log(formData, file.file)
 
 	// 调用上传接口
 	uploadFile(formData).then(res => {
-		console.log(res);
 		if (res.code == 200 && res.data && res.data.length) {
 			submitImgUrl.value = res.data
 		}
@@ -147,7 +131,6 @@ const uploadFile = async (formData) => {
 	});
 
 	const data = await response.json();
-	console.log(data);
 	return data;
 };
 
@@ -169,7 +152,8 @@ function deleteImg() {
 
 
 const formSubmit = async () => {
-	if (!logoText.value || !imgUrl.value || !submitImgUrl.value) {
+	console.log(prompt.value, submitImgUrl.value)
+	if (!imgUrl.value || !submitImgUrl.value) {
 		showError.value = true
 
 		setTimeout(() => {
@@ -190,13 +174,16 @@ const formSubmit = async () => {
 
 		const data = {
 			input: {
-				"swap_image": targetImageUrl.value,
-				"target_image": swapImageUrl.value,
-			},
-		};
-		console.log("formSubmit data", data);
-		let response = await aonet.prediction("/predictions/ai/face-swap", data);
-		console.log("test", response)
+				"image": submitImgUrl.value,
+				"style": "3D",
+				"prompt": prompt.value,
+				"negative_prompt": "",
+				"prompt_strength": 4.5,
+				"denoising_strength": 1,
+				"instant_id_strength": 0.8
+			}
+		}
+		let response = await aonet.prediction("/predictions/ai/face-to-many", data)
 		if (response.task.exec_code == 200 && response.task.is_success) {
 			showLoading.value = false
 
@@ -220,6 +207,25 @@ const formSubmit = async () => {
 
 }
 
+async function getTemplateList() {
+	try {
+		const list = await getTemplate()
+		templateList.value = list
+		prompt.value = list[0].prompt
+	} catch (error) {
+		console.log(error)
+	}
+}
+
+function selectTemplate(id, imageUrl, prompt_) {
+	templateId.value = id
+	prompt.value = prompt_
+}
+
+onMounted(() => {
+	getTemplateList()
+})
+
 </script>
 
 <style scoped>
@@ -227,8 +233,41 @@ const formSubmit = async () => {
 	width: 100%;
 	height: 27.73vw;
 	margin-top: 8.53vw;
-
 	margin-bottom: 8.53vw;
+	position: relative;
+	padding: 4.27vw;
+}
+
+.banner img {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.banner p {
+	position: relative;
+	z-index: 10;
+	font-family: Roboto-Black;
+	font-weight: 900;
+	font-size: 6.4vw;
+	color: #FFFFFF;
+	text-align: left;
+	font-style: normal;
+	text-transform: none;
+}
+
+.banner p:last-child {
+	width: 49.07vw;
+	font-family: Roboto-Regular;
+	font-weight: 400;
+	font-size: 2.4vw;
+	color: #FFFFFF;
+	line-height: 4.27vw;
+	text-align: left;
+	font-style: normal;
+	text-transform: none;
 }
 
 .uni-form-item .title {
@@ -257,7 +296,12 @@ const formSubmit = async () => {
 	box-sizing: border-box;
 
 }
-
+.error-text{
+	width: 86.67vw;
+	position: fixed;
+	bottom: 21.6vw;
+	
+}
 .error-text .content {
 	background-color: #F3A32B;
 	font-size: 3.2vw;
@@ -343,37 +387,58 @@ const formSubmit = async () => {
 	background-clip: text;
 }
 
-.card-container {
-  display: flex;
-  flex-wrap: wrap;
+.templateCon {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	height: auto;
+	background: transparent;
 }
 
-.card-item {
-  box-sizing: border-box;
+.template_item {
+	width: 24.8vw;
+	height: 44vw;
+	background: #F1F1F1;
+	border-radius: 1.07vw;
+	margin-bottom: 4.53vw;
+	position: relative;
+	overflow: hidden;
+	box-sizing: border-box;
+
 }
 
-.odd-item {
-  background-color: #f0f0f0;
+.template_item img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
-.card-image {
-  width: 100%;
-  height: 100%;
+.templateActive {
+	border: .27vw solid #000;
+
 }
 
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
+.isActiveIcon {
+	position: absolute;
+	bottom: 1.6vw;
+	right: 1.6vw;
+	width: 3.2vw;
+	height: 3.2vw;
+	background: #FFFFFF;
+	border: .27vw solid #000000;
+	border-radius: 50%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
-li {
-  display: inline-block;
+.isActiveIcon img{
+	height: 2.13vw;
+	width: 2.13vw;
 }
 
-img {
-width: 100%;
-  height: 200px;
-  object-fit: contain;
+.active{
+	background: #EBCC2F;
 }
 </style>

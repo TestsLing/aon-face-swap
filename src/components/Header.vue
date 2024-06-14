@@ -2,7 +2,7 @@
 	<div class="custom-navbar">
 		<img src="../assets/logo_.png" class="logo" @click="goIndex"></img>
 
-		<div class="title">AON FACE SWAP</div>
+		<div class="title">AON 3D Clothing</div>
 		<div class="right">
 			<div class="right_count">
 				<img src="../assets/icons/money.png" class="moneyIcon"></img>

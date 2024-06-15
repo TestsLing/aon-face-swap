@@ -53,7 +53,7 @@
 			</div>
 
 			<div class="uni-form-item error-text" v-if="showError">
-				<div class="content">请选择一张图片</div>
+				<div class="content">请上传一张图片</div>
 			</div>
 			<div class="bottom_btn">
 				<div class="spendCount">

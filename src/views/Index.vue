@@ -91,6 +91,7 @@ const imgUrl = ref('');
 const submitImgUrl = ref('');
 const templateList = ref([]);
 const templateId = ref(1);
+const appData = process.env?.appData || {}
 
 const maxSize = 30 * 1024 * 1024;
 function goToComplete(url) {
@@ -152,7 +153,9 @@ function deleteImg() {
 
 
 const formSubmit = async () => {
-	console.log(swapImgUrl.value, submitImgUrl.value)
+	console.log("swapImgUrl.value", swapImgUrl.value)
+	console.log("swapImgUrl.value", submitImgUrl.value)
+	
 	if (!imgUrl.value || !submitImgUrl.value || !swapImgUrl.value) {
 		showError.value = true
 
@@ -173,7 +176,7 @@ const formSubmit = async () => {
 		const aonet = new AI(ai_options)
 		const data = {      
 			input: {       
-				 "swap_image": submitImgUrl.value,
+				 "swap_image": swapImgUrl.value,
 				 "target_image": swapImgUrl.value,     
 			},    
 		};    

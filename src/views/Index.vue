@@ -53,7 +53,7 @@
 			</div>
 
 			<div class="uni-form-item error-text" v-if="showError">
-				<div class="content">Please Upload your photos</div>
+				<div class="content">请选择一张图片</div>
 			</div>
 			<div class="bottom_btn">
 				<div class="spendCount">
@@ -171,18 +171,6 @@ const formSubmit = async () => {
 		}
 
 		const aonet = new AI(ai_options)
-
-		// const data = {
-		// 	input: {
-		// 		"image": submitImgUrl.value,
-		// 		"style": "3D",
-		// 		"prompt": prompt.value,
-		// 		"negative_prompt": "",
-		// 		"prompt_strength": 4.5,
-		// 		"denoising_strength": 1,
-		// 		"instant_id_strength": 0.8
-		// 	}
-		// }
 		const data = {      
 			input: {       
 				 "swap_image": submitImgUrl.value,
@@ -219,6 +207,7 @@ async function getTemplateList() {
 		const list = await getTemplate()
 		templateList.value = list
 		swapImgUrl.value = list[0].image
+		console.log("imageUrl", swapImgUrl.value)
 	} catch (error) {
 		console.log(error)
 	}
